@@ -30,7 +30,7 @@ class SnackbarUtil {
     Get.snackbar(
       title,
       message,
-      backgroundColor: Colors.blueAccent,
+      backgroundColor: Colors.blueGrey,
       colorText: Colors.white,
       snackPosition: SnackPosition.TOP,
       margin: const EdgeInsets.all(15),

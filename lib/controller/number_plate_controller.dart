@@ -1,17 +1,23 @@
 import 'dart:async';
 import 'dart:io';
+import 'package:excel/excel.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:intl/intl.dart';
 import 'package:numberplatefinder/models/entries_model.dart';
 import 'package:numberplatefinder/services.dart';
 import 'package:numberplatefinder/utils/api_urls.dart';
 import 'package:numberplatefinder/utils/snackbar_util.dart';
+import 'package:open_file/open_file.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:permission_handler/permission_handler.dart';
+import 'package:syncfusion_flutter_xlsio/xlsio.dart' as sync;
 
 class NumberPlateController extends GetxController {
-  FocusNode searchNode=FocusNode();
+  FocusNode searchNode = FocusNode();
   var isLoading = false.obs;
   Rx<File>? imageFile = Rx<File>(File(''));
   List<String> numberPlates = [];
@@ -22,16 +28,22 @@ class NumberPlateController extends GetxController {
 
   @override
   Future<void> onInit() async {
-   await getEntries();
-   Timer.periodic(Duration(seconds: 1), (timer) {
-     currentTime.value = DateTime.now();
-   });
+    await getEntries();
+    Timer.periodic(Duration(seconds: 1), (timer) {
+      currentTime.value = DateTime.now();
+    });
     // TODO: implement onInit
     super.onInit();
   }
 
-
   final List<RegExp> numberPlatePatterns = [
+
+    // Support for newer 5-digit ending number plates
+    RegExp(r'^[A-Z]{2}[0-9]{1,2}[A-Z]{1,4}[0-9]{5}$'),
+
+    // Standard (No spaces or special chars): GJ01AB1234
+    RegExp(r'^[A-Z]{2}[0-9]{1,2}[A-Z]{1,4}[0-9]{3,4}$'),
+
     // Standard (No spaces or special chars): GJ01AB1234
     RegExp(r'^[A-Z]{2}[0-9]{1,2}[A-Z]{1,4}[0-9]{3,4}$'),
 
@@ -60,9 +72,7 @@ class NumberPlateController extends GetxController {
     RegExp(r'^22CD[0-9]{4}$'),
 
     // Diplomatic: 22BH1234A
-
     RegExp(r'^22[A-Z]{2}[0-9]{3,4}[A-Z]?$'),
-
 
     // Military: 123456A or 12345A
     RegExp(r'^[0-9]{5,6}[A-Z]$'),
@@ -81,72 +91,149 @@ class NumberPlateController extends GetxController {
     }
   }
 
+  Future<void> scanForNumberPlates(File imageFile) async {
+    final inputImage = InputImage.fromFile(imageFile);
+    final textRecognizer = TextRecognizer(script: TextRecognitionScript.latin);
+    final recognizedText = await textRecognizer.processImage(inputImage);
+
+    List<String> allLines = [];
+    String? firstValidPlate;
+
+    // Step 1: Process individual lines
+    for (final block in recognizedText.blocks) {
+      for (final line in block.lines) {
+        String rawText = line.text.toUpperCase().replaceAll(RegExp(r'[^A-Z0-9]'), '');
+        String cleaned = replaceZerosWithQ(rawText.replaceAll('IND', ''));
+
+        allLines.add(cleaned);
+
+        for (final pattern in numberPlatePatterns) {
+          if (pattern.hasMatch(cleaned)) {
+            firstValidPlate = cleaned;
+            break;
+          }
+        }
+        if (firstValidPlate != null) break;
+      }
+      if (firstValidPlate != null) break;
+    }
+
+    // Step 2: Combine lines only if no match found yet
+    if (firstValidPlate == null && allLines.length > 1) {
+      for (int i = 0; i < allLines.length - 1; i++) {
+        String combined2 = replaceZerosWithQ(allLines[i] + allLines[i + 1]);
+        print('2-----$combined2');
+        for (final pattern in numberPlatePatterns) {
+          if (pattern.hasMatch(combined2)) {
+            firstValidPlate = combined2;
+            break;
+          }
+        }
+        if (firstValidPlate != null) break;
+
+        if (i + 2 < allLines.length) {
+          String combined3 = replaceZerosWithQ(allLines[i] + allLines[i + 1] + allLines[i + 2]);
+          print('3-----$combined3');
+          for (final pattern in numberPlatePatterns) {
+            if (pattern.hasMatch(combined3)) {
+              firstValidPlate = combined3;
+              break;
+            }
+          }
+          if (firstValidPlate != null) break;
+        }
+      }
+    }
+
+    // Step 3: Use the first valid detected plate
+    if (firstValidPlate != null) {
+      numberPlates = [firstValidPlate];
+      numberPlateController.text = firstValidPlate;
+    } else {
+      SnackbarUtil.showError(
+        'Error',
+        'Unable to scan vehicle number please enter manually or try again',
+        seconds: 4,
+      );
+    }
+
+    update();
+    await textRecognizer.close();
+  }
 
   // Future<void> scanForNumberPlates(File imageFile) async {
   //   final inputImage = InputImage.fromFile(imageFile);
   //   final textRecognizer = TextRecognizer(script: TextRecognitionScript.latin);
   //   final recognizedText = await textRecognizer.processImage(inputImage);
   //
+  //   List<String> detectedPlates = [];
   //   List<String> allLines = [];
-  //   Set<String> matchedPlates = {};
   //
   //   for (final block in recognizedText.blocks) {
   //     for (final line in block.lines) {
-  //       String raw = line.text.toUpperCase().replaceAll(RegExp(r'[^A-Z0-9]'), '');
-  //       String cleaned = raw
-  //           .replaceAll('O', '0')
-  //           .replaceAll('I', '1')
-  //           .replaceAll('Z', '2')
-  //           .replaceAll('B', '8')
-  //           .replaceAll('D', '0'); // sometimes D is wrongly used for 0
+  //       String rawText = line.text.toUpperCase().replaceAll(
+  //         RegExp(r'[^A-Z0-9]'),
+  //         '',
+  //       );
+  //
+  //       // Common OCR error corrections
+  //       String cleaned = rawText.replaceAll('IND', '');
+  //           // .replaceAll('O', '0')
+  //           // .replaceAll('I', '1')
+  //           // .replaceAll('Z', '2')
+  //           // .replaceAll('B', '8');
+  //
+  //       // ✅ Replace 0 with Q at specific positions (before regex matching)
+  //       cleaned = replaceZerosWithQ(cleaned);
   //
   //       allLines.add(cleaned);
   //
   //       for (final pattern in numberPlatePatterns) {
   //         if (pattern.hasMatch(cleaned)) {
-  //           matchedPlates.add(cleaned);
-  //         }
-  //       }
-  //     }
-  //   }
-  //
-  //   // Combine 2 or 3 lines if needed
-  //   for (int i = 0; i < allLines.length - 1; i++) {
-  //     String combined2 = allLines[i] + allLines[i + 1];
-  //     print('2-----$combined2');
-  //
-  //     for (final pattern in numberPlatePatterns) {
-  //       if (pattern.hasMatch(combined2)) {
-  //         matchedPlates.add(combined2);
-  //         break;
-  //       }
-  //     }
-  //
-  //     if (i + 2 < allLines.length) {
-  //       String combined3 = allLines[i] + allLines[i + 1] + allLines[i + 2];
-  //       print('3-----$combined3');
-  //
-  //       for (final pattern in numberPlatePatterns) {
-  //         if (pattern.hasMatch(combined3)) {
-  //           matchedPlates.add(combined3);
+  //           detectedPlates.add(cleaned);
   //           break;
   //         }
   //       }
   //     }
   //   }
   //
-  //   // Prioritize 10-character results (like GJ03KQ6533)
-  //   List<String> sortedPlates = matchedPlates.toList()
-  //     ..sort((a, b) => (b.length == 10 ? 1 : 0) - (a.length == 10 ? 1 : 0));
+  //   // Try combining lines if no direct match
+  //   if (detectedPlates.isEmpty && allLines.length > 1) {
+  //     for (int i = 0; i < allLines.length - 1; i++) {
+  //       String combined2 = replaceZerosWithQ(allLines[i] + allLines[i + 1]);
+  //       print('2-----$combined2');
   //
-  //   numberPlates = sortedPlates;
+  //       for (final pattern in numberPlatePatterns) {
+  //         if (pattern.hasMatch(combined2)) {
+  //           detectedPlates.add(combined2);
+  //           break;
+  //         }
+  //       }
+  //
+  //       if (i + 2 < allLines.length) {
+  //         String combined3 = replaceZerosWithQ(
+  //           allLines[i] + allLines[i + 1] + allLines[i + 2],
+  //         );
+  //         print('3-----$combined3');
+  //
+  //         for (final pattern in numberPlatePatterns) {
+  //           if (pattern.hasMatch(combined3)) {
+  //             detectedPlates.add(combined3);
+  //             break;
+  //           }
+  //         }
+  //       }
+  //     }
+  //   }
+  //
+  //   numberPlates = detectedPlates;
   //
   //   if (numberPlates.isNotEmpty) {
   //     numberPlateController.text = numberPlates[0];
   //   } else {
   //     SnackbarUtil.showError(
   //       'Error',
-  //       'Unable to scan vehicle number. Please try again or enter manually.',
+  //       'Unable to scan vehicle number please enter manually or try again',
   //       seconds: 4,
   //     );
   //   }
@@ -155,81 +242,41 @@ class NumberPlateController extends GetxController {
   //   await textRecognizer.close();
   // }
 
+  String replaceZerosWithQ(String input) {
+    if (input.length != 10) return input;
 
-  Future<void> scanForNumberPlates(File imageFile) async {
-    final inputImage = InputImage.fromFile(imageFile);
-    final textRecognizer = TextRecognizer(script: TextRecognitionScript.latin);
-    final recognizedText = await textRecognizer.processImage(inputImage);
+    List<String> chars = input.split('');
+    final indicesToCheck = [0, 1, 4, 5];
+    final indicesToCheck1 = [2,3, 6,7,8,9];
 
-    List<String> detectedPlates = [];
-    List<String> allLines = [];
-
-    for (final block in recognizedText.blocks) {
-      for (final line in block.lines) {
-        String rawText = line.text.toUpperCase().replaceAll(
-          RegExp(r'[^A-Z0-9]'),
-          '',
-        );
-
-        // Correct common OCR errors
-        String cleaned = rawText
-            .replaceAll('O', '0')
-            .replaceAll('I', '1')
-            .replaceAll('Z', '2')
-            .replaceAll('B', '8');
-
-        allLines.add(cleaned);
-
-        for (final pattern in numberPlatePatterns) {
-          if (pattern.hasMatch(cleaned)) {
-            detectedPlates.add(cleaned); // Display cleaned value
-            break;
-          }
-        }
+    for (int i in indicesToCheck) {
+      if (chars[i] == '0') {
+        chars[i] = 'Q';
+      } else if (chars[i] == '1') {
+        chars[i] = 'I';
+      }else if (chars[i] == '2') {
+        chars[i] = 'Z';
+      }else if (chars[i] == '8') {
+        chars[i] = 'B';
       }
     }
-
-    // Try combining 2 and 3 lines
-    if (detectedPlates.isEmpty && allLines.length > 1) {
-      for (int i = 0; i < allLines.length - 1; i++) {
-        String combined2 = allLines[i] + allLines[i + 1];
-        print('2-----'+combined2);
-
-        for (final pattern in numberPlatePatterns) {
-          if (pattern.hasMatch(combined2)) {
-            detectedPlates.add(combined2);
-            break;
-          }
+    for (int i in indicesToCheck1) {
+      if (chars[i] == 'Z') {
+        chars[i] = '4';
+      }else if(chars[i] == 'O')
+        {
+          chars[i] = '0';
         }
-
-        if (i + 2 < allLines.length) {
-          String combined3 = allLines[i] + allLines[i + 1] + allLines[i + 2];
-          print('3-----'+combined3);
-          for (final pattern in numberPlatePatterns) {
-            if (pattern.hasMatch(combined3)) {
-              detectedPlates.add(combined3);
-              break;
-            }
-          }
-        }
-      }
     }
 
-    numberPlates = detectedPlates;
-    if (numberPlates.isNotEmpty){
-      numberPlateController.text = numberPlates[0];
-    }else{
-      SnackbarUtil.showError('Error', 'Unable to scan vehicle number please enter manually or try again',seconds: 4);
 
-    }
 
-    update();
-    await textRecognizer.close();
+
+    return chars.join('');
   }
 
   Future<void> outEntry(String numberPlate) async {
     try {
-
       isLoading.value = true;
 
       final getData = await ApiService.post(
@@ -240,7 +287,7 @@ class NumberPlateController extends GetxController {
       if (getData != null) {
         SnackbarUtil.showSuccess('Success', 'Vehicle OUT Successfully');
 
-       await getEntries();
+        await getEntries();
       }
     } catch (e) {
       if (kDebugMode) {
@@ -250,9 +297,6 @@ class NumberPlateController extends GetxController {
       isLoading.value = false;
     }
   }
-
-
-
 
   Future<void> addEntry() async {
     try {
@@ -268,7 +312,7 @@ class NumberPlateController extends GetxController {
         imageFile?.value = File('');
         SnackbarUtil.showSuccess('Success', 'Vehicle IN Successfully');
         Navigator.pop(Get.context!);
-      await  getEntries();
+        await getEntries();
       }
     } catch (e) {
       if (kDebugMode) {
@@ -300,31 +344,142 @@ class NumberPlateController extends GetxController {
   //local search
   Future<void> searchEntries(String numberPlate) async {
     try {
-searchEntriesList = <EntryData>[].obs;
+      searchEntriesList = <EntryData>[].obs;
 
-isLoading.value = true;
-      if(numberPlate.isNotEmpty)
-        {
-          for (var element in entries) {
-            if(element.vehicleNumber?.contains(numberPlate.toUpperCase()) ?? false)
-            {
-              searchEntriesList.add(element);
-            }
+      isLoading.value = true;
+      if (numberPlate.isNotEmpty) {
+        for (var element in entries) {
+          if (element.vehicleNumber?.contains(numberPlate.toUpperCase()) ??
+              false) {
+            searchEntriesList.add(element);
           }
-        }else{
+        }
+      } else {
         searchEntriesList.clear();
-        searchEntriesList.addAll(entries);      }
-
-
-    }catch(e)
-    {
+        searchEntriesList.addAll(entries);
+      }
+    } catch (e) {
       if (kDebugMode) {
         print("Exception: $e");
       }
-    }
-    finally{
+    } finally {
       isLoading.value = false;
     }
-
   }
+
+
+
+  Future<void> exportEntriesToExcel() async {
+    var storagePermission = await Permission.storage.request();
+    var manageStoragePermission = await Permission.manageExternalStorage.request();
+
+    if (storagePermission.isGranted || manageStoragePermission.isGranted) {
+      final workbook = sync.Workbook();
+      final sheet = workbook.worksheets[0];
+      sheet.name = 'Vehicle Entries';
+
+      // Set column widths
+      sheet.setColumnWidthInPixels(1, 50);  // ID
+      sheet.setColumnWidthInPixels(2, 100); // Vehicle Number
+      sheet.setColumnWidthInPixels(3, 150); // In Time
+      sheet.setColumnWidthInPixels(4, 150); // Out Time
+
+      // Add headers
+      // Get header cells
+      final cellStyle = workbook.styles.add('headerStyle');
+      cellStyle.bold = true;
+
+// Set header text with bold style
+      sheet.getRangeByName('A1').cellStyle = cellStyle;
+      sheet.getRangeByName('A1').setText('ID');
+
+      sheet.getRangeByName('B1').cellStyle = cellStyle;
+      sheet.getRangeByName('B1').setText('Vehicle Number');
+
+      sheet.getRangeByName('C1').cellStyle = cellStyle;
+      sheet.getRangeByName('C1').setText('In Time');
+
+      sheet.getRangeByName('D1').cellStyle = cellStyle;
+      sheet.getRangeByName('D1').setText('Out Time');
+
+
+      // Add data rows
+      int rowIndex = 2;
+      for (var entry in entries) {
+        sheet.getRangeByName('A$rowIndex').setText(entry.id?.toString() ?? '');
+        sheet.getRangeByName('B$rowIndex').setText(entry.vehicleNumber ?? '');
+        sheet.getRangeByName('C$rowIndex').setText(entry.inTime ?? '');
+        sheet.getRangeByName('D$rowIndex').setText(entry.outTime ?? '');
+        rowIndex++;
+      }
+
+      // Save file
+      final List<int> bytes = workbook.saveAsStream();
+      workbook.dispose();
+
+      final fileName = 'Vehicle_Entries_${DateFormat('yyyyMMdd_HHmmss').format(DateTime.now())}.xlsx';
+      final directory = Directory('/storage/emulated/0/Download');
+      final file = File('${directory.path}/$fileName');
+      await file.writeAsBytes(bytes, flush: true);
+
+      print('Excel saved to: ${file.path}');
+      OpenFile.open(file.path);
+    } else {
+      print('Storage permission not granted.');
+      openAppSettings();
+    }
+  }
+
+
+// Future<void> exportEntriesToExcel() async {
+  //   // Request both permissions for Android 11+
+  //   var storagePermission = await Permission.storage.request();
+  //   var manageStoragePermission = await Permission.manageExternalStorage.request();
+  //
+  //   if (storagePermission.isGranted || manageStoragePermission.isGranted) {
+  //     var excel = Excel.createExcel();
+  //     var sheet = excel['Vehicle Entries1'];
+  //
+  //     // Add header row
+  //     sheet.appendRow([
+  //       TextCellValue('ID',),
+  //       TextCellValue('Vehicle Number                '),
+  //       TextCellValue('In Time                       '),
+  //       TextCellValue('Out Time                      '),
+  //       // TextCellValue('Created At'),
+  //       // TextCellValue('Updated At'),
+  //     ]);
+  //
+  //     // Add data rows
+  //     for (var entry in entries) {
+  //       sheet.appendRow([
+  //         TextCellValue(entry.id?.toString() ?? '',),
+  //         TextCellValue(entry.vehicleNumber ?? ''),
+  //         TextCellValue(entry.inTime ?? ''),
+  //         TextCellValue(entry.outTime ?? ''),
+  //         // TextCellValue(entry.createdAt ?? ''),
+  //         // TextCellValue(entry.updatedAt ?? ''),
+  //       ]);
+  //     }
+  //
+  //     // File name
+  //     String fileName = 'Vehicle_Entries_${DateFormat('yyyyMMdd_HHmmss').format(DateTime.now())}.xlsx';
+  //
+  //     // Save to Downloads (user-visible)
+  //     Directory directory = Directory('/storage/emulated/0/Download');
+  //     final file = File('${directory.path}/$fileName')
+  //       ..createSync(recursive: true)
+  //       ..writeAsBytesSync(excel.encode()!);
+  //
+  //     print("Excel exported to: ${file.path}");
+  //     SnackbarUtil.showInfo('Saved',"Excel saved to ${file.path}");
+  //     OpenFile.open(file.path);
+  //   } else {
+  //     print("Storage permission not granted.");
+  //     openAppSettings(); // optional: open settings page
+  //   }
+  // }
+
+
+
 }

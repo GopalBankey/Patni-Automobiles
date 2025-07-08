@@ -1,6 +1,5 @@
 import 'dart:io';
 import 'package:dotted_border/dotted_border.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
@@ -17,11 +16,11 @@ class NumberPlateScanner extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return PopScope(
-      // canPop: false, // Prevent default pop
+      canPop: true,
       onPopInvoked: (didPop) async {
-        if (!didPop) {
+        if (didPop) {
           controller.numberPlateController.clear();
-          controller.imageFile=Rx<File>(File(''));
+          controller.imageFile = Rx<File>(File(''));
         }
       },
       child: Scaffold(
@@ -169,33 +168,6 @@ class NumberPlateScanner extends StatelessWidget {
                   const SizedBox(height: 30),
 
                   /// Submit Button
-                  // Obx(() {
-                  //   return controller.isLoading.value
-                  //       ? CircularProgressIndicator()
-                  //       : CommonButton(
-                  //         text: 'Submit Vehicle',
-                  //         onTap: () async {
-                  //           if (kDebugMode) {
-                  //             print('kkkkkkkkkkkk');
-                  //           }
-                  //           if (controller
-                  //               .numberPlateController
-                  //               .text
-                  //               .isNotEmpty) {
-                  //          await   controller.addEntry();
-                  //           } else {
-                  //             Get.snackbar(
-                  //               'Error',
-                  //               'Please enter the vehicle number',
-                  //               backgroundColor: Colors.red,
-                  //               colorText: Colors.white,
-                  //               snackPosition: SnackPosition.TOP,
-                  //               margin: const EdgeInsets.all(12),
-                  //             );
-                  //           }
-                  //         },
-                  //       );
-                  // }),
                   Obx(() {
                     return controller.isLoading.value
                         ? CircularProgressIndicator()

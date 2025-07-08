@@ -23,6 +23,12 @@ class HomeScreen extends StatelessWidget {
         title: "Vehicle Entries",
         showBackButton: false,
         actions: [
+          IconButton(onPressed: () {
+
+            controller. exportEntriesToExcel();
+
+          }, icon: Icon(Icons.download)),
+
           IconButton(
             onPressed: () {
               Get.defaultDialog(
@@ -31,8 +37,7 @@ class HomeScreen extends StatelessWidget {
                 middleText: 'Are you sure you want to logout?',
                 actions: [
                   Row(
-                    mainAxisAlignment:
-                    MainAxisAlignment.center,
+                    mainAxisAlignment: MainAxisAlignment.center,
 
                     children: [
                       TextButton(
@@ -41,10 +46,7 @@ class HomeScreen extends StatelessWidget {
                         },
                         style: ElevatedButton.styleFrom(
                           shape: RoundedRectangleBorder(
-                            borderRadius:
-                            BorderRadius.circular(
-                              20,
-                            ),
+                            borderRadius: BorderRadius.circular(20),
                             side: BorderSide(
                               color: AppColors.primary,
                               width: 2,
@@ -53,9 +55,7 @@ class HomeScreen extends StatelessWidget {
                         ),
                         child: Text(
                           'Cancel',
-                          style: TextStyle(
-                            color: AppColors.primary,
-                          ),
+                          style: TextStyle(color: AppColors.primary),
                         ),
                       ),
                       SizedBox(width: 20),
@@ -73,13 +73,12 @@ class HomeScreen extends StatelessWidget {
                   ),
                   SizedBox(height: 5),
                 ],
-
-
               );
-              // Get.to(() => NumberPlateScanner());
             },
             icon: Icon(Icons.logout),
           ),
+          
+
         ],
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
