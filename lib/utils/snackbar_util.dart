@@ -10,21 +10,24 @@ class SnackbarUtil {
       colorText: Colors.black,
       snackPosition: SnackPosition.TOP,
       margin: const EdgeInsets.all(15),
-      duration: const Duration(seconds: 2),
+      duration: const Duration(seconds:4 ),
     );
   }
 
-  static void showError(String title, String message,{int seconds=2}) {
+  static void showError(String title, String message, {int seconds = 4}) {
     Get.snackbar(
       title,
       message,
       backgroundColor: Colors.redAccent,
       colorText: Colors.white,
       snackPosition: SnackPosition.TOP,
+      dismissDirection: DismissDirection.horizontal, // 👈 Allow left/right swipe
       margin: const EdgeInsets.all(15),
-      duration:  Duration(seconds: seconds ),
+      duration: Duration(seconds: seconds),
+
     );
   }
+
 
   static void showInfo(String title, String message) {
     Get.snackbar(
@@ -33,8 +36,9 @@ class SnackbarUtil {
       backgroundColor: Colors.blueGrey,
       colorText: Colors.white,
       snackPosition: SnackPosition.TOP,
+      dismissDirection:DismissDirection.horizontal ,
       margin: const EdgeInsets.all(15),
-      duration: const Duration(seconds: 2),
+      duration: const Duration(seconds: 4),
     );
   }
 }

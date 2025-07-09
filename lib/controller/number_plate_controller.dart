@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:io';
-import 'package:excel/excel.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -12,7 +11,6 @@ import 'package:numberplatefinder/services.dart';
 import 'package:numberplatefinder/utils/api_urls.dart';
 import 'package:numberplatefinder/utils/snackbar_util.dart';
 import 'package:open_file/open_file.dart';
-import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:syncfusion_flutter_xlsio/xlsio.dart' as sync;
 
@@ -24,6 +22,7 @@ class NumberPlateController extends GetxController {
   var entries = <EntryData>[].obs;
   var searchEntriesList = <EntryData>[].obs;
   TextEditingController numberPlateController = TextEditingController();
+  TextEditingController locationController = TextEditingController();
   var currentTime = DateTime.now().obs;
 
   @override
@@ -37,7 +36,6 @@ class NumberPlateController extends GetxController {
   }
 
   final List<RegExp> numberPlatePatterns = [
-
     // Support for newer 5-digit ending number plates
     RegExp(r'^[A-Z]{2}[0-9]{1,2}[A-Z]{1,4}[0-9]{5}$'),
 
@@ -102,7 +100,10 @@ class NumberPlateController extends GetxController {
     // Step 1: Process individual lines
     for (final block in recognizedText.blocks) {
       for (final line in block.lines) {
-        String rawText = line.text.toUpperCase().replaceAll(RegExp(r'[^A-Z0-9]'), '');
+        String rawText = line.text.toUpperCase().replaceAll(
+          RegExp(r'[^A-Z0-9]'),
+          '',
+        );
         String cleaned = replaceZerosWithQ(rawText.replaceAll('IND', ''));
 
         allLines.add(cleaned);
@@ -132,7 +133,9 @@ class NumberPlateController extends GetxController {
         if (firstValidPlate != null) break;
 
         if (i + 2 < allLines.length) {
-          String combined3 = replaceZerosWithQ(allLines[i] + allLines[i + 1] + allLines[i + 2]);
+          String combined3 = replaceZerosWithQ(
+            allLines[i] + allLines[i + 1] + allLines[i + 2],
+          );
           print('3-----$combined3');
           for (final pattern in numberPlatePatterns) {
             if (pattern.hasMatch(combined3)) {
@@ -247,30 +250,26 @@ class NumberPlateController extends GetxController {
 
     List<String> chars = input.split('');
     final indicesToCheck = [0, 1, 4, 5];
-    final indicesToCheck1 = [2,3, 6,7,8,9];
+    final indicesToCheck1 = [2, 3, 6, 7, 8, 9];
 
     for (int i in indicesToCheck) {
       if (chars[i] == '0') {
         chars[i] = 'Q';
       } else if (chars[i] == '1') {
         chars[i] = 'I';
-      }else if (chars[i] == '2') {
+      } else if (chars[i] == '2') {
         chars[i] = 'Z';
-      }else if (chars[i] == '8') {
+      } else if (chars[i] == '8') {
         chars[i] = 'B';
       }
     }
     for (int i in indicesToCheck1) {
       if (chars[i] == 'Z') {
         chars[i] = '4';
-      }else if(chars[i] == 'O')
-        {
-          chars[i] = '0';
-        }
+      } else if (chars[i] == 'O') {
+        chars[i] = '0';
+      }
     }
-
-
-
 
     return chars.join('');
   }
@@ -367,11 +366,10 @@ class NumberPlateController extends GetxController {
     }
   }
 
-
-
   Future<void> exportEntriesToExcel() async {
     var storagePermission = await Permission.storage.request();
-    var manageStoragePermission = await Permission.manageExternalStorage.request();
+    var manageStoragePermission =
+        await Permission.manageExternalStorage.request();
 
     if (storagePermission.isGranted || manageStoragePermission.isGranted) {
       final workbook = sync.Workbook();
@@ -379,7 +377,7 @@ class NumberPlateController extends GetxController {
       sheet.name = 'Vehicle Entries';
 
       // Set column widths
-      sheet.setColumnWidthInPixels(1, 50);  // ID
+      sheet.setColumnWidthInPixels(1, 50); // ID
       sheet.setColumnWidthInPixels(2, 100); // Vehicle Number
       sheet.setColumnWidthInPixels(3, 150); // In Time
       sheet.setColumnWidthInPixels(4, 150); // Out Time
@@ -389,7 +387,7 @@ class NumberPlateController extends GetxController {
       final cellStyle = workbook.styles.add('headerStyle');
       cellStyle.bold = true;
 
-// Set header text with bold style
+      // Set header text with bold style
       sheet.getRangeByName('A1').cellStyle = cellStyle;
       sheet.getRangeByName('A1').setText('ID');
 
@@ -402,14 +400,13 @@ class NumberPlateController extends GetxController {
       sheet.getRangeByName('D1').cellStyle = cellStyle;
       sheet.getRangeByName('D1').setText('Out Time');
 
-
       // Add data rows
       int rowIndex = 2;
       for (var entry in entries) {
         sheet.getRangeByName('A$rowIndex').setText(entry.id?.toString() ?? '');
         sheet.getRangeByName('B$rowIndex').setText(entry.vehicleNumber ?? '');
-        sheet.getRangeByName('C$rowIndex').setText(entry.inTime ?? '');
-        sheet.getRangeByName('D$rowIndex').setText(entry.outTime ?? '');
+        sheet.getRangeByName('C$rowIndex').setText(DateFormat('dd-MM-yyyy hh:mm:ss a').format(DateTime.parse(entry.inTime  ?? '')));
+        sheet.getRangeByName('D$rowIndex').setText(entry.outTime == null ?  '' :DateFormat('dd-MM-yyyy hh:mm:ss a').format(DateTime.parse(entry.outTime  ?? '')));
         rowIndex++;
       }
 
@@ -417,12 +414,15 @@ class NumberPlateController extends GetxController {
       final List<int> bytes = workbook.saveAsStream();
       workbook.dispose();
 
-      final fileName = 'Vehicle_Entries_${DateFormat('yyyyMMdd_HHmmss').format(DateTime.now())}.xlsx';
+      final fileName =
+          'Vehicle_Entries_${DateFormat('yyyyMMdd_HHmmss').format(DateTime.now())}.xlsx';
       final directory = Directory('/storage/emulated/0/Download');
       final file = File('${directory.path}/$fileName');
       await file.writeAsBytes(bytes, flush: true);
 
       print('Excel saved to: ${file.path}');
+      SnackbarUtil.showInfo('Saved', "Excel saved to ${file.path}");
+
       OpenFile.open(file.path);
     } else {
       print('Storage permission not granted.');
@@ -430,8 +430,7 @@ class NumberPlateController extends GetxController {
     }
   }
 
-
-// Future<void> exportEntriesToExcel() async {
+  // Future<void> exportEntriesToExcel() async {
   //   // Request both permissions for Android 11+
   //   var storagePermission = await Permission.storage.request();
   //   var manageStoragePermission = await Permission.manageExternalStorage.request();
@@ -479,7 +478,4 @@ class NumberPlateController extends GetxController {
   //     openAppSettings(); // optional: open settings page
   //   }
   // }
-
-
-
 }

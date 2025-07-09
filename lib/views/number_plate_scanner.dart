@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 import 'package:numberplatefinder/customs/common_button.dart';
 import 'package:numberplatefinder/customs/custom_app_bar.dart';
 import 'package:numberplatefinder/utils/app_colors.dart';
+import 'package:numberplatefinder/utils/snackbar_util.dart';
 import '../controller/number_plate_controller.dart';
 
 class NumberPlateScanner extends StatelessWidget {
@@ -61,6 +62,29 @@ class NumberPlateScanner extends StatelessWidget {
                       filled: true,
                       hintText: 'Enter Vehicle Number',
                       prefixIcon: Icon(Icons.pedal_bike_outlined),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                        borderSide: BorderSide.none,
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                        borderSide: BorderSide.none,
+                      ),
+                      errorBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                        borderSide: BorderSide.none,
+                      ),
+                    ),
+                  ),
+                  SizedBox(height: 10,),
+                  TextFormField(
+                    controller: controller.locationController,
+                    // textCapitalization: TextCapitalization.characters,
+                    decoration: InputDecoration(
+                      fillColor: Colors.white,
+                      filled: true,
+                      hintText: 'Enter Location',
+                      prefixIcon: Icon(Icons.location_on_rounded),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(10),
                         borderSide: BorderSide.none,
@@ -181,14 +205,16 @@ class NumberPlateScanner extends StatelessWidget {
 
                             // Check empty
                             if (plate.isEmpty) {
-                              Get.snackbar(
-                                'Error',
-                                'Please enter the vehicle number',
-                                backgroundColor: Colors.red,
-                                colorText: Colors.white,
-                                snackPosition: SnackPosition.TOP,
-                                margin: const EdgeInsets.all(12),
-                              );
+                              SnackbarUtil.showError( 'Error',
+                                'Please enter the vehicle number',);
+                              // Get.snackbar(
+                              //   'Error',
+                              //   'Please enter the vehicle number',
+                              //   backgroundColor: Colors.red,
+                              //   colorText: Colors.white,
+                              //   snackPosition: SnackPosition.TOP,
+                              //   margin: const EdgeInsets.all(12),
+                              // );
                               return;
                             }
 
@@ -198,14 +224,9 @@ class NumberPlateScanner extends StatelessWidget {
                             );
 
                             if (!isValid) {
-                              Get.snackbar(
-                                'Error',
-                                'Please enter a valid vehicle number',
-                                backgroundColor: Colors.red,
-                                colorText: Colors.white,
-                                snackPosition: SnackPosition.TOP,
-                                margin: const EdgeInsets.all(12),
-                              );
+                              SnackbarUtil.showError( 'Error',
+                                'Please enter a valid vehicle number',);
+
                               return;
                             }
 
