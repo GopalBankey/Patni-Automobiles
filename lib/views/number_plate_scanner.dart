@@ -21,6 +21,7 @@ class NumberPlateScanner extends StatelessWidget {
       onPopInvoked: (didPop) async {
         if (didPop) {
           controller.numberPlateController.clear();
+          controller.locationController.clear();
           controller.imageFile = Rx<File>(File(''));
         }
       },

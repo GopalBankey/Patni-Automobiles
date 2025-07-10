@@ -28,6 +28,7 @@ class EntryData {
   String? outTime;
   String? createdAt;
   String? updatedAt;
+  String? location;
 
   EntryData(
       {this.id,
@@ -35,7 +36,10 @@ class EntryData {
         this.inTime,
         this.outTime,
         this.createdAt,
-        this.updatedAt});
+        this.updatedAt,
+        this.location
+
+      });
 
   EntryData.fromJson(Map<String, dynamic> json) {
     id = json['id'];
@@ -44,6 +48,7 @@ class EntryData {
     outTime = json['out_time'];
     createdAt = json['created_at'];
     updatedAt = json['updated_at'];
+    location = json['location'];
   }
 
   Map<String, dynamic> toJson() {
@@ -54,6 +59,7 @@ class EntryData {
     data['out_time'] = outTime;
     data['created_at'] = createdAt;
     data['updated_at'] = updatedAt;
+    data['location'] = location;
     return data;
   }
 }

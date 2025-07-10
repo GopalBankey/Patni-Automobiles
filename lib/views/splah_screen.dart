@@ -8,12 +8,13 @@ class SplashScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    Future.delayed(Duration(seconds: 2), () {
-      final authController = Get.put(LoginController());
+    final authController = Get.put(LoginController()); // ⬅️ put this outside
+
+    Future.delayed(const Duration(seconds: 2), () {
       if (authController.isLoggedIn.value) {
-        Get.offAll(()=>HomeScreen());
+        Get.offAll(() =>  HomeScreen());
       } else {
-        Get.offAll(()=>LoginScreen());
+        Get.offAll(() =>  LoginScreen());
       }
     });
 
@@ -24,10 +25,8 @@ class SplashScreen extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Image.asset('assets/images/company_logo.png', scale: 3),
-            SizedBox(height: 20),
-            CircularProgressIndicator(),
-            SizedBox(height: 10),
-            // Text("Checking login...", style: TextStyle(fontSize: 16)),
+            const SizedBox(height: 20),
+            const CircularProgressIndicator(),
           ],
         ),
       ),

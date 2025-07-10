@@ -9,6 +9,8 @@ class SnackbarUtil {
       backgroundColor: Colors.greenAccent,
       colorText: Colors.black,
       snackPosition: SnackPosition.TOP,
+      dismissDirection: DismissDirection.horizontal, //
+
       margin: const EdgeInsets.all(15),
       duration: const Duration(seconds:4 ),
     );
@@ -21,7 +23,7 @@ class SnackbarUtil {
       backgroundColor: Colors.redAccent,
       colorText: Colors.white,
       snackPosition: SnackPosition.TOP,
-      dismissDirection: DismissDirection.horizontal, // 👈 Allow left/right swipe
+      dismissDirection: DismissDirection.horizontal, //
       margin: const EdgeInsets.all(15),
       duration: Duration(seconds: seconds),
 

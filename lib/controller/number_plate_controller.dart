@@ -302,12 +302,11 @@ class NumberPlateController extends GetxController {
       isLoading.value = true;
 
       final getData = await ApiService.post(
-        ApiUrls.inEntry + numberPlateController.text.trim(),
-        {},
-      );
+        "${ApiUrls.inEntry}${numberPlateController.text.trim()}&location=${locationController.text}",{});
 
       if (getData != null) {
         numberPlateController.clear();
+        locationController.clear();
         imageFile?.value = File('');
         SnackbarUtil.showSuccess('Success', 'Vehicle IN Successfully');
         Navigator.pop(Get.context!);
@@ -330,6 +329,7 @@ class NumberPlateController extends GetxController {
         entries.value = EntriesModel.fromJson(getData).data ?? [];
         searchEntriesList.clear();
         searchEntriesList.addAll(entries);
+
       }
     } catch (e) {
       if (kDebugMode) {
@@ -381,6 +381,7 @@ class NumberPlateController extends GetxController {
       sheet.setColumnWidthInPixels(2, 100); // Vehicle Number
       sheet.setColumnWidthInPixels(3, 150); // In Time
       sheet.setColumnWidthInPixels(4, 150); // Out Time
+      sheet.setColumnWidthInPixels(5, 150); // Out Time
 
       // Add headers
       // Get header cells
@@ -400,13 +401,18 @@ class NumberPlateController extends GetxController {
       sheet.getRangeByName('D1').cellStyle = cellStyle;
       sheet.getRangeByName('D1').setText('Out Time');
 
+      sheet.getRangeByName('E1').cellStyle = cellStyle;
+      sheet.getRangeByName('E1').setText('Location');
+
       // Add data rows
       int rowIndex = 2;
       for (var entry in entries) {
         sheet.getRangeByName('A$rowIndex').setText(entry.id?.toString() ?? '');
         sheet.getRangeByName('B$rowIndex').setText(entry.vehicleNumber ?? '');
-        sheet.getRangeByName('C$rowIndex').setText(DateFormat('dd-MM-yyyy hh:mm:ss a').format(DateTime.parse(entry.inTime  ?? '')));
-        sheet.getRangeByName('D$rowIndex').setText(entry.outTime == null ?  '' :DateFormat('dd-MM-yyyy hh:mm:ss a').format(DateTime.parse(entry.outTime  ?? '')));
+        sheet.getRangeByName('C$rowIndex').setText(DateFormat('dd-MM-yyyy HH:mm:ss').format(DateTime.parse(entry.inTime  ?? '')));
+        sheet.getRangeByName('D$rowIndex').setText(entry.outTime == null ?  '' :DateFormat('dd-MM-yyyy HH:mm:ss').format(DateTime.parse(entry.outTime  ?? '')));
+        sheet.getRangeByName('E$rowIndex').setText((entry.location== '0' || entry.location == null)  ?  '' : entry.location  );
+
         rowIndex++;
       }
 

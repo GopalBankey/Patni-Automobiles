@@ -9,24 +9,27 @@ import 'package:numberplatefinder/utils/validators.dart';
 class LoginScreen extends StatelessWidget {
   LoginScreen({super.key});
 
-  final loginController = Get.put(LoginController());
+  final loginController = Get.find<LoginController>();
+  final _formKey = GlobalKey<FormState>();
 
   @override
   Widget build(BuildContext context) {
+    final screenHeight = MediaQuery.sizeOf(context).height;
+    final screenWidth = MediaQuery.sizeOf(context).width;
+
     return Scaffold(
       body: SingleChildScrollView(
         child: Form(
-          key: loginController.fromKey,
+          key: _formKey,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.center,
-            // mainAxisAlignment: MainAxisAlignment.center,
             children: [
               SizedBox(
-                height: MediaQuery.sizeOf(context).height * .3,
+                height: screenHeight * 0.3,
                 child: Image.asset('assets/images/app_logo.png', scale: 2.5),
               ),
               ClipRRect(
-                borderRadius: BorderRadius.only(
+                borderRadius: const BorderRadius.only(
                   topLeft: Radius.circular(40),
                   topRight: Radius.circular(40),
                 ),
@@ -35,21 +38,19 @@ class LoginScreen extends StatelessWidget {
                     Container(
                       decoration: BoxDecoration(
                         color: AppColors.background,
-                        borderRadius: BorderRadius.only(
+                        borderRadius: const BorderRadius.only(
                           topLeft: Radius.circular(40),
                           topRight: Radius.circular(40),
                         ),
                       ),
-                      width: MediaQuery.sizeOf(context).width,
-                      height: MediaQuery.sizeOf(context).height * .7,
+                      width: screenWidth,
+                      height: screenHeight * 0.7,
                       child: Padding(
-                        padding: const EdgeInsets.only(left: 30, right: 30),
+                        padding: const EdgeInsets.symmetric(horizontal: 30),
                         child: Column(
                           children: [
-                            SizedBox(
-                              height: MediaQuery.sizeOf(context).height * .28,
-                            ),
-                            Text(
+                            SizedBox(height: screenHeight * 0.28),
+                            const Text(
                               'Login',
                               style: TextStyle(
                                 fontSize: 24,
@@ -57,41 +58,37 @@ class LoginScreen extends StatelessWidget {
                                 color: AppColors.primary,
                               ),
                             ),
-                            SizedBox(height: 20),
+                            const SizedBox(height: 20),
                             CustomTextFormField(
                               keyboardType: TextInputType.phone,
                               prefixIcon: Icons.phone,
                               maxLength: 10,
-
                               validator: (value) => Validators.phone(value),
-
                               label: 'Mobile',
                               hint: 'Mobile',
                               controller: loginController.mobileController,
                             ),
-                            SizedBox(height: 20),
+                            const SizedBox(height: 20),
                             CustomTextFormField(
                               prefixIcon: Icons.password,
                               isPassword: true,
-
                               validator: (value) => Validators.password(value),
                               label: 'Password',
                               hint: 'Password',
                               controller: loginController.passwordController,
                             ),
-                            SizedBox(height: 40),
+                            const SizedBox(height: 40),
                             Obx(() {
                               return loginController.isLoading.value
-                                  ? CircularProgressIndicator()
+                                  ? const CircularProgressIndicator()
                                   : CommonButton(
-                                    text: 'Login',
-                                    onTap: () {
-                                      if (loginController.fromKey.currentState!
-                                          .validate()) {
-                                        loginController.login();
-                                      }
-                                    },
-                                  );
+                                text: 'Login',
+                                onTap: () {
+                                  if (_formKey.currentState!.validate()) {
+                                    loginController.login();
+                                  }
+                                },
+                              );
                             }),
                           ],
                         ),
@@ -100,23 +97,23 @@ class LoginScreen extends StatelessWidget {
                     Positioned(
                       top: -290,
                       left: -20,
-
                       child: Container(
                         decoration: BoxDecoration(
-                          color: AppColors.primary,
                           shape: BoxShape.circle,
-
                           gradient: LinearGradient(
                             begin: Alignment.bottomLeft,
                             end: Alignment.topRight,
-                            colors: [AppColors.primary, Color(0xff367ead)],
+                            colors: [
+                              AppColors.primary,
+                              const Color(0xff367ead),
+                            ],
                           ),
                         ),
-                        width: MediaQuery.sizeOf(context).height * .6,
-                        height: MediaQuery.sizeOf(context).height * .6,
+                        width: screenHeight * 0.6,
+                        height: screenHeight * 0.6,
                         child: Column(
                           children: [
-                            SizedBox(height: 300),
+                            const SizedBox(height: 300),
                             Row(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
@@ -125,9 +122,7 @@ class LoginScreen extends StatelessWidget {
                                   color: Colors.white,
                                   scale: 3,
                                 ),
-                                SizedBox(
-                                  width: MediaQuery.sizeOf(context).width * .15,
-                                ),
+                                SizedBox(width: screenWidth * 0.15),
                               ],
                             ),
                           ],
