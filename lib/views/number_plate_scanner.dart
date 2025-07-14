@@ -177,19 +177,6 @@ class NumberPlateScanner extends StatelessWidget {
                         );
                   }),
 
-                  //   onPressed: controller.pickImage,
-                  //   icon: Icon(Icons.photo),
-                  //   label: Text('Pick Image'),
-                  //   style: ElevatedButton.styleFrom(
-                  //     backgroundColor: Colors.cyan,
-                  //     foregroundColor: Colors.white,
-                  //     minimumSize: Size(double.infinity, 48),
-                  //     shape: RoundedRectangleBorder(
-                  //
-                  //       borderRadius: BorderRadius.circular(12),
-                  //     ),
-                  //   ),
-                  // ),
                   const SizedBox(height: 30),
 
                   /// Submit Button
@@ -208,14 +195,12 @@ class NumberPlateScanner extends StatelessWidget {
                             if (plate.isEmpty) {
                               SnackbarUtil.showError( 'Error',
                                 'Please enter the vehicle number',);
-                              // Get.snackbar(
-                              //   'Error',
-                              //   'Please enter the vehicle number',
-                              //   backgroundColor: Colors.red,
-                              //   colorText: Colors.white,
-                              //   snackPosition: SnackPosition.TOP,
-                              //   margin: const EdgeInsets.all(12),
-                              // );
+                              return;
+                            }
+                            else if(controller.locationController.text.isEmpty){
+
+                              SnackbarUtil.showError( 'Error',
+                                'Please enter the location',);
                               return;
                             }
 

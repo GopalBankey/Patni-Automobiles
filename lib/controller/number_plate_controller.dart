@@ -164,87 +164,6 @@ class NumberPlateController extends GetxController {
     await textRecognizer.close();
   }
 
-  // Future<void> scanForNumberPlates(File imageFile) async {
-  //   final inputImage = InputImage.fromFile(imageFile);
-  //   final textRecognizer = TextRecognizer(script: TextRecognitionScript.latin);
-  //   final recognizedText = await textRecognizer.processImage(inputImage);
-  //
-  //   List<String> detectedPlates = [];
-  //   List<String> allLines = [];
-  //
-  //   for (final block in recognizedText.blocks) {
-  //     for (final line in block.lines) {
-  //       String rawText = line.text.toUpperCase().replaceAll(
-  //         RegExp(r'[^A-Z0-9]'),
-  //         '',
-  //       );
-  //
-  //       // Common OCR error corrections
-  //       String cleaned = rawText.replaceAll('IND', '');
-  //           // .replaceAll('O', '0')
-  //           // .replaceAll('I', '1')
-  //           // .replaceAll('Z', '2')
-  //           // .replaceAll('B', '8');
-  //
-  //       // ✅ Replace 0 with Q at specific positions (before regex matching)
-  //       cleaned = replaceZerosWithQ(cleaned);
-  //
-  //       allLines.add(cleaned);
-  //
-  //       for (final pattern in numberPlatePatterns) {
-  //         if (pattern.hasMatch(cleaned)) {
-  //           detectedPlates.add(cleaned);
-  //           break;
-  //         }
-  //       }
-  //     }
-  //   }
-  //
-  //   // Try combining lines if no direct match
-  //   if (detectedPlates.isEmpty && allLines.length > 1) {
-  //     for (int i = 0; i < allLines.length - 1; i++) {
-  //       String combined2 = replaceZerosWithQ(allLines[i] + allLines[i + 1]);
-  //       print('2-----$combined2');
-  //
-  //       for (final pattern in numberPlatePatterns) {
-  //         if (pattern.hasMatch(combined2)) {
-  //           detectedPlates.add(combined2);
-  //           break;
-  //         }
-  //       }
-  //
-  //       if (i + 2 < allLines.length) {
-  //         String combined3 = replaceZerosWithQ(
-  //           allLines[i] + allLines[i + 1] + allLines[i + 2],
-  //         );
-  //         print('3-----$combined3');
-  //
-  //         for (final pattern in numberPlatePatterns) {
-  //           if (pattern.hasMatch(combined3)) {
-  //             detectedPlates.add(combined3);
-  //             break;
-  //           }
-  //         }
-  //       }
-  //     }
-  //   }
-  //
-  //   numberPlates = detectedPlates;
-  //
-  //   if (numberPlates.isNotEmpty) {
-  //     numberPlateController.text = numberPlates[0];
-  //   } else {
-  //     SnackbarUtil.showError(
-  //       'Error',
-  //       'Unable to scan vehicle number please enter manually or try again',
-  //       seconds: 4,
-  //     );
-  //   }
-  //
-  //   update();
-  //   await textRecognizer.close();
-  // }
-
   String replaceZerosWithQ(String input) {
     if (input.length != 10) return input;
 
@@ -287,6 +206,9 @@ class NumberPlateController extends GetxController {
         SnackbarUtil.showSuccess('Success', 'Vehicle OUT Successfully');
 
         await getEntries();
+      }else{
+        await getEntries();
+
       }
     } catch (e) {
       if (kDebugMode) {
@@ -381,7 +303,7 @@ class NumberPlateController extends GetxController {
       sheet.setColumnWidthInPixels(2, 100); // Vehicle Number
       sheet.setColumnWidthInPixels(3, 150); // In Time
       sheet.setColumnWidthInPixels(4, 150); // Out Time
-      sheet.setColumnWidthInPixels(5, 150); // Out Time
+      sheet.setColumnWidthInPixels(5, 150); // location
 
       // Add headers
       // Get header cells
