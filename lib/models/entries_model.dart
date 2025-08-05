@@ -29,6 +29,7 @@ class EntryData {
   String? createdAt;
   String? updatedAt;
   String? location;
+  String? key;
 
   EntryData(
       {this.id,
@@ -37,7 +38,8 @@ class EntryData {
         this.outTime,
         this.createdAt,
         this.updatedAt,
-        this.location
+        this.location,
+        this.key
 
       });
 
@@ -49,6 +51,7 @@ class EntryData {
     createdAt = json['created_at'];
     updatedAt = json['updated_at'];
     location = json['location'];
+    key = json['key'];
   }
 
   Map<String, dynamic> toJson() {
@@ -60,6 +63,7 @@ class EntryData {
     data['created_at'] = createdAt;
     data['updated_at'] = updatedAt;
     data['location'] = location;
+    data['key'] = key;
     return data;
   }
 }

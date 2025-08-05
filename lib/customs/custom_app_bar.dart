@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:numberplatefinder/utils/app_colors.dart';
+
+import '../views/about_app_screen.dart' show AboutAppScreen;
 
 class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
   final String title;
@@ -31,15 +34,24 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
       ),
       foregroundColor: AppColors.white,
       backgroundColor: backgroundColor,
-
+      leadingWidth: 70,
 
       leading:
-     showBackButton
+          showBackButton
               ? IconButton(
                 icon: Icon(Icons.arrow_back_ios),
                 onPressed: () => Navigator.of(context).pop(),
               )
-              : null,
+              : IconButton(
+                onPressed: () {
+                  Get.to(AboutAppScreen());
+                },
+                icon: Image.asset(
+                  'assets/images/info.png',
+                  scale: 18,
+                  color: Colors.white,
+                ),
+              ),
       title: Text(title, style: TextStyle(fontWeight: FontWeight.bold)),
       actions: actions,
       elevation: 4.0,

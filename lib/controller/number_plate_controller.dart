@@ -25,6 +25,12 @@ class NumberPlateController extends GetxController {
   TextEditingController locationController = TextEditingController();
   var currentTime = DateTime.now().obs;
 
+  List<String> items=['Yes','No'];
+
+  var selectedValue= Rxn<String>();
+
+
+
   @override
   Future<void> onInit() async {
     await getEntries();
@@ -224,12 +230,14 @@ class NumberPlateController extends GetxController {
       isLoading.value = true;
 
       final getData = await ApiService.post(
-        "${ApiUrls.inEntry}${numberPlateController.text.trim()}&location=${locationController.text}",{});
+        "${ApiUrls.inEntry}${numberPlateController.text.trim()}&location=${locationController.text}&key=${selectedValue.value?.toLowerCase() ?? ''}",{});
 
       if (getData != null) {
         numberPlateController.clear();
         locationController.clear();
         imageFile?.value = File('');
+       selectedValue=Rxn<String>();
+
         SnackbarUtil.showSuccess('Success', 'Vehicle IN Successfully');
         Navigator.pop(Get.context!);
         await getEntries();
@@ -304,6 +312,7 @@ class NumberPlateController extends GetxController {
       sheet.setColumnWidthInPixels(3, 150); // In Time
       sheet.setColumnWidthInPixels(4, 150); // Out Time
       sheet.setColumnWidthInPixels(5, 150); // location
+      sheet.setColumnWidthInPixels(6, 50); // location
 
       // Add headers
       // Get header cells
@@ -325,6 +334,8 @@ class NumberPlateController extends GetxController {
 
       sheet.getRangeByName('E1').cellStyle = cellStyle;
       sheet.getRangeByName('E1').setText('Location');
+      sheet.getRangeByName('F1').cellStyle = cellStyle;
+      sheet.getRangeByName('F1').setText('Key');
 
       // Add data rows
       int rowIndex = 2;
@@ -334,6 +345,7 @@ class NumberPlateController extends GetxController {
         sheet.getRangeByName('C$rowIndex').setText(DateFormat('dd-MM-yyyy HH:mm:ss').format(DateTime.parse(entry.inTime  ?? '')));
         sheet.getRangeByName('D$rowIndex').setText(entry.outTime == null ?  '' :DateFormat('dd-MM-yyyy HH:mm:ss').format(DateTime.parse(entry.outTime  ?? '')));
         sheet.getRangeByName('E$rowIndex').setText((entry.location== '0' || entry.location == null)  ?  '' : entry.location  );
+        sheet.getRangeByName('F$rowIndex').setText(entry.key ?? '');
 
         rowIndex++;
       }

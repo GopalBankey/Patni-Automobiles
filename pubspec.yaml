@@ -47,6 +47,7 @@ dependencies:
   open_file: ^3.5.10
   syncfusion_flutter_xlsio: ^29.2.11
   connectivity_plus: ^5.0.2
+  url_launcher: ^6.3.2
 
 
 dev_dependencies:

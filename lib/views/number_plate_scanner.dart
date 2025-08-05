@@ -11,6 +11,7 @@ import '../controller/number_plate_controller.dart';
 
 class NumberPlateScanner extends StatelessWidget {
   NumberPlateScanner({super.key});
+
   final NumberPlateController controller = Get.find<NumberPlateController>();
 
   @override
@@ -23,6 +24,7 @@ class NumberPlateScanner extends StatelessWidget {
           controller.numberPlateController.clear();
           controller.locationController.clear();
           controller.imageFile = Rx<File>(File(''));
+          controller.selectedValue = Rxn<String>();
         }
       },
       child: Scaffold(
@@ -62,7 +64,10 @@ class NumberPlateScanner extends StatelessWidget {
                       fillColor: Colors.white,
                       filled: true,
                       hintText: 'Enter Vehicle Number',
-                      prefixIcon: Icon(Icons.pedal_bike_outlined),
+                      prefixIcon: Icon(
+                        Icons.pedal_bike_outlined,
+                        color: AppColors.primary,
+                      ),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(10),
                         borderSide: BorderSide.none,
@@ -77,7 +82,7 @@ class NumberPlateScanner extends StatelessWidget {
                       ),
                     ),
                   ),
-                  SizedBox(height: 10,),
+                  SizedBox(height: 10),
                   TextFormField(
                     controller: controller.locationController,
                     // textCapitalization: TextCapitalization.characters,
@@ -85,7 +90,10 @@ class NumberPlateScanner extends StatelessWidget {
                       fillColor: Colors.white,
                       filled: true,
                       hintText: 'Enter Location',
-                      prefixIcon: Icon(Icons.location_on_rounded),
+                      prefixIcon: Icon(
+                        Icons.location_on_rounded,
+                        color: AppColors.primary,
+                      ),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(10),
                         borderSide: BorderSide.none,
@@ -100,6 +108,111 @@ class NumberPlateScanner extends StatelessWidget {
                       ),
                     ),
                   ),
+
+                  const SizedBox(height: 10),
+
+                  // Obx(() {
+                  //   return Container(
+                  //     padding: EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                  //     decoration: BoxDecoration(
+                  //       color: Colors.white,
+                  //       borderRadius: BorderRadius.circular(10),
+                  //     ),
+                  //     child: DropdownButtonHideUnderline(
+                  //       child: DropdownButton<String>(
+                  //
+                  //         value: controller.selectedValue.value,
+                  //         hint: Text(
+                  //           'Select an option',
+                  //           style: TextStyle(fontSize: 16, fontWeight: FontWeight.w400,color: Colors.black),
+                  //         ),
+                  //         isExpanded: true,
+                  //         icon: Icon(Icons.arrow_drop_down_rounded, color: AppColors.primary),
+                  //         items: controller.items.map((item) {
+                  //           return DropdownMenuItem<String>(
+                  //             value: item,
+                  //             child: Text(
+                  //               item,
+                  //               style: TextStyle(fontSize: 16),
+                  //             ),
+                  //           );
+                  //         }).toList(),
+                  //         onChanged: (value) {
+                  //           if (value != null) {
+                  //             controller.selectedValue.value = value;
+                  //           }
+                  //         },
+                  //         iconSize: 45,
+                  //
+                  //       ),
+                  //     ),
+                  //   );
+                  // }),
+                  Obx(() {
+                    return Container(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 8,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Row(
+                            children: [
+                              Icon(Icons.key),
+                              SizedBox(width: 12),
+                              Text('Key', style: TextStyle(fontSize: 16)),
+                            ],
+                          ),
+                          SizedBox(width: 50,),
+                          Flexible(
+                            child: Row(
+                              children: [
+                                Flexible(
+                                  child: RadioListTile<String>(
+                                    value: 'Yes',
+                                    groupValue: controller.selectedValue.value,
+                                    title: Text(
+                                      'Yes',
+                                      style: TextStyle(fontSize: 16),
+                                    ),
+                                    activeColor: AppColors.primary,
+                                    onChanged: (value) {
+                                      if (value != null) {
+                                        controller.selectedValue.value = value;
+                                      }
+                                    },
+                                    contentPadding: EdgeInsets.zero,
+                                  ),
+                                ),
+                                Flexible(
+                                  child: RadioListTile<String>(
+                                    value: 'No',
+                                    groupValue: controller.selectedValue.value,
+                                    title: Text(
+                                      'No',
+                                      style: TextStyle(fontSize: 16),
+                                    ),
+                                    activeColor: AppColors.primary,
+                                    onChanged: (value) {
+                                      if (value != null) {
+                                        controller.selectedValue.value = value;
+                                      }
+                                    },
+                                    contentPadding: EdgeInsets.zero,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  }),
 
                   const SizedBox(height: 24),
 
@@ -168,7 +281,9 @@ class NumberPlateScanner extends StatelessWidget {
                                   ),
                                   Text(
                                     'No Image Selected',
-                                    style: TextStyle(fontWeight: FontWeight.w500),
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.w500,
+                                    ),
                                   ),
                                 ],
                               ),
@@ -193,14 +308,26 @@ class NumberPlateScanner extends StatelessWidget {
 
                             // Check empty
                             if (plate.isEmpty) {
-                              SnackbarUtil.showError( 'Error',
-                                'Please enter the vehicle number',);
+                              SnackbarUtil.showError(
+                                'Error',
+                                'Please enter the vehicle number',
+                              );
+                              return;
+                            } else if (controller
+                                .locationController
+                                .text
+                                .isEmpty) {
+                              SnackbarUtil.showError(
+                                'Error',
+                                'Please enter the location',
+                              );
                               return;
                             }
-                            else if(controller.locationController.text.isEmpty){
-
-                              SnackbarUtil.showError( 'Error',
-                                'Please enter the location',);
+                            else if(controller.selectedValue.value!.isEmpty){
+                              SnackbarUtil.showError(
+                                'Error',
+                                'Please select the key',
+                              );
                               return;
                             }
 
@@ -210,8 +337,10 @@ class NumberPlateScanner extends StatelessWidget {
                             );
 
                             if (!isValid) {
-                              SnackbarUtil.showError( 'Error',
-                                'Please enter a valid vehicle number',);
+                              SnackbarUtil.showError(
+                                'Error',
+                                'Please enter a valid vehicle number',
+                              );
 
                               return;
                             }
